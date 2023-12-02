@@ -10,6 +10,8 @@ import java.io.IOException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
+import java.security.cert.CertificateExpiredException;
+import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.X509Certificate;
 
 import javax.net.ssl.SSLContext;
@@ -47,6 +49,7 @@ public class SSLInfo
     private String serialNumber;
     private String issuedOn;
     private String expiresOn;
+    private String valid;
 
     // Formatted information consumed by callers
 
@@ -88,6 +91,8 @@ public class SSLInfo
         certInfoBuilder.append(issuedOn);
         certInfoBuilder.append("\nExpires on: ");
         certInfoBuilder.append(expiresOn);
+        certInfoBuilder.append("\nValid: ");
+        certInfoBuilder.append(valid);
 
         certInfo = certInfoBuilder.toString();
 
@@ -147,6 +152,18 @@ public class SSLInfo
                     serialNumber = certificate.getSerialNumber().toString();
                     issuedOn = certificate.getNotBefore().toString();
                     expiresOn = certificate.getNotAfter().toString();
+
+                    try {
+                        certificate.checkValidity();
+                        valid = Boolean.TRUE.toString();
+                    }
+                    catch (CertificateExpiredException e) {
+                        valid = Boolean.FALSE.toString();
+                    }
+                    catch (CertificateNotYetValidException e) {
+                        valid = Boolean.FALSE.toString();
+                    }
+
 
                 } catch (IOException e) {
                     Log.e(TAG, CONN_ERROR + hostname);
