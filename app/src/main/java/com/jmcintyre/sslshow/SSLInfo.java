@@ -43,13 +43,13 @@ public class SSLInfo
 
     // Certificate information
     private X509Certificate certificate;
-    private String subjectName;
-    private String issuerName;
-    private String algorithm;
-    private String serialNumber;
-    private String issuedOn;
-    private String expiresOn;
-    private String valid;
+    public String subjectName;
+    public String issuerName;
+    public String algorithm;
+    public String serialNumber;
+    public String issuedOn;
+    public String expiresOn;
+    public String valid;
 
     // Formatted information consumed by callers
 
@@ -60,7 +60,17 @@ public class SSLInfo
     public SSLInfo(String hostname) {
         this.hostname = hostname;
         fetchSSLInfo();
+        if (this.certificate != null) {
+            fetchSSLInfoFromCertificate();
+        }
         constructCertInfo();
+    }
+
+    // This constructor skips live SSL cert fetching and instead uses a provided cert
+    // Useful for testing
+    public SSLInfo( X509Certificate certificate){
+        this.certificate = certificate;
+        fetchSSLInfoFromCertificate();
     }
 
     // Getter for the certInfo
@@ -146,25 +156,6 @@ public class SSLInfo
                     // Gather certificate information from the session
                     certificate = (X509Certificate) sslSocket.getSession().getPeerCertificates()[0];
 
-                    subjectName = certificate.getSubjectX500Principal().getName();
-                    issuerName = certificate.getIssuerX500Principal().getName();
-                    algorithm = certificate.getSigAlgName();
-                    serialNumber = certificate.getSerialNumber().toString();
-                    issuedOn = certificate.getNotBefore().toString();
-                    expiresOn = certificate.getNotAfter().toString();
-
-                    try {
-                        certificate.checkValidity();
-                        valid = Boolean.TRUE.toString();
-                    }
-                    catch (CertificateExpiredException e) {
-                        valid = Boolean.FALSE.toString();
-                    }
-                    catch (CertificateNotYetValidException e) {
-                        valid = Boolean.FALSE.toString();
-                    }
-
-
                 } catch (IOException e) {
                     Log.e(TAG, CONN_ERROR + hostname);
                     Log.e(TAG, e.toString());
@@ -188,6 +179,28 @@ public class SSLInfo
             sslInfoThread.join();
         } catch (InterruptedException e) {
             Log.e(TAG, e.toString());
+        }
+    }
+
+    // This function fetches info from a provided certificate
+    private void fetchSSLInfoFromCertificate()
+    {
+        subjectName = certificate.getSubjectX500Principal().getName();
+        issuerName = certificate.getIssuerX500Principal().getName();
+        algorithm = certificate.getSigAlgName();
+        serialNumber = certificate.getSerialNumber().toString();
+        issuedOn = certificate.getNotBefore().toString();
+        expiresOn = certificate.getNotAfter().toString();
+
+        try {
+            certificate.checkValidity();
+            valid = Boolean.TRUE.toString();
+        }
+        catch (CertificateExpiredException e) {
+            valid = Boolean.FALSE.toString();
+        }
+        catch (CertificateNotYetValidException e) {
+            valid = Boolean.FALSE.toString();
         }
     }
 }
